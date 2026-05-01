@@ -10,6 +10,7 @@ use Luchaninov\NicnamesClient\Dto\CreateContactRequest;
 use Luchaninov\NicnamesClient\Dto\CreateDomainRequest;
 use Luchaninov\NicnamesClient\Dto\DomainCheckResult;
 use Luchaninov\NicnamesClient\Dto\DomainList;
+use Luchaninov\NicnamesClient\Dto\ListParams;
 use Luchaninov\NicnamesClient\Dto\OperationModel;
 use Luchaninov\NicnamesClient\Dto\OrderDomainModel;
 use Luchaninov\NicnamesClient\Dto\PeriodModel;
@@ -17,10 +18,14 @@ use Luchaninov\NicnamesClient\Dto\PeriodUnitModel;
 use Luchaninov\NicnamesClient\Dto\PriceModel;
 use Luchaninov\NicnamesClient\Dto\RenewDomainRequest;
 use Luchaninov\NicnamesClient\Dto\RestoreDomainRequest;
+use Luchaninov\NicnamesClient\Dto\TierModel;
 use Luchaninov\NicnamesClient\Dto\TransferDomainRequest;
+use Luchaninov\NicnamesClient\Dto\UpdateNameServersRequest;
 use Luchaninov\NicnamesClient\Dto\UpdateWhoisPrivacyRequest;
+use Luchaninov\NicnamesClient\Exception\MalformedResponseException;
 use Luchaninov\NicnamesClient\HttpTransport;
 use Luchaninov\NicnamesClient\NicnamesClient;
+use Luchaninov\NicnamesClient\NicnamesClientInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
@@ -57,7 +62,7 @@ class NicnamesClientTest extends TestCase
                         'billing' => 'c987654321',
                         'ns' => ['ns1.example.com', 'ns2.example.com'],
                     ],
-                ]),
+                ], JSON_THROW_ON_ERROR),
                 ['http_code' => 200],
             ),
         ]);
@@ -82,7 +87,7 @@ class NicnamesClientTest extends TestCase
                         ['oid' => 'o1', 'type' => 'domain', 'status' => ['active'], 'cts' => 1, 'uts' => 1],
                         ['oid' => 'o2', 'type' => 'domain', 'status' => ['expired'], 'cts' => 2, 'uts' => 2],
                     ],
-                ]),
+                ], JSON_THROW_ON_ERROR),
                 ['http_code' => 200],
             ),
         ]);
@@ -106,15 +111,15 @@ class NicnamesClientTest extends TestCase
                         ['amt' => 12.34, 'ccy' => 840, 'op' => 'CREATE', 'period' => ['unit' => 'YEARS', 'value' => 1]],
                         ['amt' => 23.45, 'ccy' => 840, 'op' => 'CREATE', 'period' => ['unit' => 'YEARS', 'value' => 2]],
                     ],
-                ]),
+                ], JSON_THROW_ON_ERROR),
                 ['http_code' => 200],
             ),
         ]);
 
         $check = $client->checkDomain('example.com');
         self::assertInstanceOf(DomainCheckResult::class, $check);
-        self::assertSame('CREATE', $check->availableFor);
-        self::assertSame('REGULAR', $check->tier);
+        self::assertSame(OperationModel::CREATE, $check->availableFor);
+        self::assertSame(TierModel::REGULAR, $check->tier);
         self::assertCount(2, $check->price);
         self::assertSame(12.34, $check->price[0]->amt);
         self::assertSame(1, $check->price[0]->period->value);
@@ -139,7 +144,7 @@ class NicnamesClientTest extends TestCase
                     'cts' => 100,
                     'uts' => 100,
                     'domain' => ['name' => 'example.com', 'registrant' => 'c987654321'],
-                ]),
+                ], JSON_THROW_ON_ERROR),
                 ['http_code' => 201],
             );
         });
@@ -162,7 +167,7 @@ class NicnamesClientTest extends TestCase
     public function testCreateDomainAsyncReturnsJobId(): void
     {
         $client = $this->makeClient([
-            new MockResponse(json_encode(['jobId' => 'JOB-XYZ']), ['http_code' => 202]),
+            new MockResponse(json_encode(['jobId' => 'JOB-XYZ'], JSON_THROW_ON_ERROR), ['http_code' => 202]),
         ]);
 
         $price = new PriceModel(12.34, 840, OperationModel::CREATE, new PeriodModel(PeriodUnitModel::YEARS, 1));
@@ -174,6 +179,33 @@ class NicnamesClientTest extends TestCase
         self::assertNull($result->order);
     }
 
+    public function testCreateDomain202WithoutJobIdThrowsMalformedResponse(): void
+    {
+        $client = $this->makeClient([
+            new MockResponse(json_encode([], JSON_THROW_ON_ERROR), ['http_code' => 202]),
+        ]);
+
+        $price = new PriceModel(12.34, 840, OperationModel::CREATE, new PeriodModel(PeriodUnitModel::YEARS, 1));
+        $request = new CreateDomainRequest($price, 'c987654321');
+
+        $this->expectException(MalformedResponseException::class);
+        $this->expectExceptionMessageMatches('/jobId/');
+        $client->createDomain('example.com', $request);
+    }
+
+    public function testCreateDomain202WithEmptyJobIdThrowsMalformedResponse(): void
+    {
+        $client = $this->makeClient([
+            new MockResponse(json_encode(['jobId' => ''], JSON_THROW_ON_ERROR), ['http_code' => 202]),
+        ]);
+
+        $price = new PriceModel(12.34, 840, OperationModel::CREATE, new PeriodModel(PeriodUnitModel::YEARS, 1));
+        $request = new CreateDomainRequest($price, 'c987654321');
+
+        $this->expectException(MalformedResponseException::class);
+        $client->createDomain('example.com', $request);
+    }
+
     public function testUpdateNameServersSendsPatchAndArray(): void
     {
         $captured = [];
@@ -181,13 +213,16 @@ class NicnamesClientTest extends TestCase
             $captured = ['method' => $method, 'body' => json_decode($options['body'] ?? '{}', true)];
 
             return new MockResponse(
-                json_encode(['oid' => 'o1', 'type' => 'domain', 'status' => ['pendingUpdate'], 'cts' => 1, 'uts' => 1]),
+                json_encode(['oid' => 'o1', 'type' => 'domain', 'status' => ['pendingUpdate'], 'cts' => 1, 'uts' => 1], JSON_THROW_ON_ERROR),
                 ['http_code' => 200],
             );
         });
         $client = new NicnamesClient(new HttpTransport($mock, 'KEY'));
 
-        $result = $client->updateDomainNameServers('example.com', ['ns1.test.', 'ns2.test.']);
+        $result = $client->updateDomainNameServers(
+            'example.com',
+            new UpdateNameServersRequest(['ns1.test.', 'ns2.test.']),
+        );
         self::assertSame('PATCH', $captured['method']);
         self::assertSame(['ns1.test.', 'ns2.test.'], $captured['body']['ns']);
         self::assertNotNull($result->order);
@@ -200,7 +235,7 @@ class NicnamesClientTest extends TestCase
             $captured = ['body' => json_decode($options['body'] ?? '{}', true)];
 
             return new MockResponse(
-                json_encode(['oid' => 'o1', 'type' => 'domain', 'status' => [], 'cts' => 1, 'uts' => 1]),
+                json_encode(['oid' => 'o1', 'type' => 'domain', 'status' => [], 'cts' => 1, 'uts' => 1], JSON_THROW_ON_ERROR),
                 ['http_code' => 200],
             );
         });
@@ -228,7 +263,7 @@ class NicnamesClientTest extends TestCase
                     'email' => 'john.doe@example.com',
                     'phone' => '+15551234567',
                     'phonePolicy' => true,
-                ]),
+                ], JSON_THROW_ON_ERROR),
                 ['http_code' => 201],
             ),
         ]);
@@ -270,7 +305,7 @@ class NicnamesClientTest extends TestCase
                         'phone' => '+1',
                         'phonePolicy' => true,
                     ]],
-                ]),
+                ], JSON_THROW_ON_ERROR),
                 ['http_code' => 200],
             ),
         ]);
@@ -284,7 +319,7 @@ class NicnamesClientTest extends TestCase
     public function testEmailVerificationStatus(): void
     {
         $client = $this->makeClient([
-            new MockResponse(json_encode(['code' => 123456, 'email' => 'a@b.c']), ['http_code' => 200]),
+            new MockResponse(json_encode(['code' => 123456, 'email' => 'a@b.c'], JSON_THROW_ON_ERROR), ['http_code' => 200]),
         ]);
 
         $status = $client->getRegistrantEmailVerificationStatus('example.com');
@@ -303,7 +338,7 @@ class NicnamesClientTest extends TestCase
             ];
 
             return new MockResponse(
-                json_encode(['oid' => 'o-t', 'type' => 'domain', 'status' => ['new'], 'cts' => 1, 'uts' => 1]),
+                json_encode(['oid' => 'o-t', 'type' => 'domain', 'status' => ['new'], 'cts' => 1, 'uts' => 1], JSON_THROW_ON_ERROR),
                 ['http_code' => 200],
             );
         });
@@ -331,7 +366,7 @@ class NicnamesClientTest extends TestCase
                 'body' => json_decode($options['body'] ?? '{}', true),
             ];
 
-            return new MockResponse(json_encode(['jobId' => 'JOB-RENEW']), ['http_code' => 202]);
+            return new MockResponse(json_encode(['jobId' => 'JOB-RENEW'], JSON_THROW_ON_ERROR), ['http_code' => 202]);
         });
         $client = new NicnamesClient(new HttpTransport($mock, 'KEY'));
 
@@ -353,7 +388,7 @@ class NicnamesClientTest extends TestCase
             $captured = ['url' => $url, 'body' => json_decode($options['body'] ?? '{}', true)];
 
             return new MockResponse(
-                json_encode(['oid' => 'o-r', 'type' => 'domain', 'status' => ['active'], 'cts' => 1, 'uts' => 1]),
+                json_encode(['oid' => 'o-r', 'type' => 'domain', 'status' => ['active'], 'cts' => 1, 'uts' => 1], JSON_THROW_ON_ERROR),
                 ['http_code' => 200],
             );
         });
@@ -376,7 +411,7 @@ class NicnamesClientTest extends TestCase
             $captured = ['method' => $method, 'url' => $url];
 
             return new MockResponse(
-                json_encode(['code' => 441001, 'email' => 'verify@example.com']),
+                json_encode(['code' => 441001, 'email' => 'verify@example.com'], JSON_THROW_ON_ERROR),
                 ['http_code' => 202],
             );
         });
@@ -408,7 +443,7 @@ class NicnamesClientTest extends TestCase
                     'email' => 'a@b.c',
                     'phone' => '+1',
                     'phonePolicy' => true,
-                ]),
+                ], JSON_THROW_ON_ERROR),
                 ['http_code' => 200],
             );
         });
@@ -426,13 +461,45 @@ class NicnamesClientTest extends TestCase
         $mock = new MockHttpClient(function (string $method, string $url, array $options) use (&$captured) {
             $captured = ['body' => json_decode($options['body'] ?? '{}', true)];
 
-            return new MockResponse(json_encode(['total' => 0, 'list' => []]), ['http_code' => 200]);
+            return new MockResponse(json_encode(['total' => 0, 'list' => []], JSON_THROW_ON_ERROR), ['http_code' => 200]);
         });
         $client = new NicnamesClient(new HttpTransport($mock, 'KEY'));
 
-        $client->listDomains(new \Luchaninov\NicnamesClient\Dto\ListParams(pgn: 3, pgl: 50, filter: "email = 'x@y.z'"));
+        $client->listDomains(new ListParams(pgn: 3, pgl: 50, filter: "email = 'x@y.z'"));
         self::assertSame(3, $captured['body']['pgn']);
         self::assertSame(50, $captured['body']['pgl']);
         self::assertSame("email = 'x@y.z'", $captured['body']['filter']);
+    }
+
+    public function testListDomainsWithoutParamsSendsNoBody(): void
+    {
+        $captured = [];
+        $mock = new MockHttpClient(function (string $method, string $url, array $options) use (&$captured) {
+            $captured = ['hasBody' => isset($options['body'])];
+
+            return new MockResponse(json_encode(['total' => 0, 'list' => []], JSON_THROW_ON_ERROR), ['http_code' => 200]);
+        });
+        $client = new NicnamesClient(new HttpTransport($mock, 'KEY'));
+        $client->listDomains();
+        self::assertFalse($captured['hasBody']);
+    }
+
+    public function testListContactsWithoutParamsSendsNoBody(): void
+    {
+        $captured = [];
+        $mock = new MockHttpClient(function (string $method, string $url, array $options) use (&$captured) {
+            $captured = ['hasBody' => isset($options['body'])];
+
+            return new MockResponse(json_encode(['total' => 0, 'list' => []], JSON_THROW_ON_ERROR), ['http_code' => 200]);
+        });
+        $client = new NicnamesClient(new HttpTransport($mock, 'KEY'));
+        $client->listContacts();
+        self::assertFalse($captured['hasBody']);
+    }
+
+    public function testClientImplementsInterface(): void
+    {
+        $client = new NicnamesClient(new HttpTransport(new MockHttpClient(), 'KEY'));
+        self::assertInstanceOf(NicnamesClientInterface::class, $client);
     }
 }

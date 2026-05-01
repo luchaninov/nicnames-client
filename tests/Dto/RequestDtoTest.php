@@ -19,7 +19,7 @@ use PHPUnit\Framework\TestCase;
 
 class RequestDtoTest extends TestCase
 {
-    private function price(string $op = OperationModel::CREATE): PriceModel
+    private function price(OperationModel $op = OperationModel::CREATE): PriceModel
     {
         return new PriceModel(12.34, 840, $op, new PeriodModel(PeriodUnitModel::YEARS, 1));
     }

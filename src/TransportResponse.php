@@ -13,7 +13,8 @@ final readonly class TransportResponse
     ) {
     }
 
-    public function isAccepted(): bool
+    /** Whether the API parked the work for asynchronous completion (HTTP 202 Accepted). */
+    public function isAsync(): bool
     {
         return $this->status === 202;
     }

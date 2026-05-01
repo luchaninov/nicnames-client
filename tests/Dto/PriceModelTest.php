@@ -20,8 +20,8 @@ class PriceModelTest extends TestCase
 
         self::assertSame(12.34, $decoded->amt);
         self::assertSame(840, $decoded->ccy);
-        self::assertSame('CREATE', $decoded->op);
-        self::assertSame('YEARS', $decoded->period->unit);
+        self::assertSame(OperationModel::CREATE, $decoded->op);
+        self::assertSame(PeriodUnitModel::YEARS, $decoded->period->unit);
         self::assertSame(2, $decoded->period->value);
     }
 
@@ -30,9 +30,17 @@ class PriceModelTest extends TestCase
         $price = PriceModel::createFromArray([]);
         self::assertSame(0.0, $price->amt);
         self::assertSame(0, $price->ccy);
-        self::assertSame('NONE', $price->op);
-        self::assertSame('YEARS', $price->period->unit);
+        self::assertSame(OperationModel::NONE, $price->op);
+        self::assertSame(PeriodUnitModel::YEARS, $price->period->unit);
         self::assertSame(1, $price->period->value);
+    }
+
+    public function testCreateFromArrayUnknownEnumValuesFallBackToDefaults(): void
+    {
+        $price = PriceModel::createFromArray(['op' => 'NOT_A_THING', 'period' => ['unit' => 'WEEKS', 'value' => 4]]);
+        self::assertSame(OperationModel::NONE, $price->op);
+        self::assertSame(PeriodUnitModel::YEARS, $price->period->unit);
+        self::assertSame(4, $price->period->value);
     }
 
     public function testPeriodModelRoundTrip(): void
@@ -40,7 +48,21 @@ class PriceModelTest extends TestCase
         $period = new PeriodModel(PeriodUnitModel::MONTHS, 6);
         self::assertSame(['unit' => 'MONTHS', 'value' => 6], $period->toArray());
         $decoded = PeriodModel::createFromArray($period->toArray());
-        self::assertSame('MONTHS', $decoded->unit);
+        self::assertSame(PeriodUnitModel::MONTHS, $decoded->unit);
         self::assertSame(6, $decoded->value);
+    }
+
+    public function testToArrayUsesEnumValues(): void
+    {
+        $price = new PriceModel(1.0, 840, OperationModel::TRANSFER, new PeriodModel(PeriodUnitModel::MONTHS, 12));
+        self::assertSame(
+            [
+                'amt' => 1.0,
+                'ccy' => 840,
+                'op' => 'TRANSFER',
+                'period' => ['unit' => 'MONTHS', 'value' => 12],
+            ],
+            $price->toArray(),
+        );
     }
 }

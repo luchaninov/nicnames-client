@@ -9,8 +9,8 @@ final readonly class DomainCheckResult
     /** @param PriceModel[] $price */
     public function __construct(
         public string $domainName,
-        public string $availableFor,
-        public string $tier,
+        public OperationModel $availableFor,
+        public TierModel $tier,
         public array $price = [],
     ) {
     }
@@ -18,10 +18,13 @@ final readonly class DomainCheckResult
     /** @param array<string, mixed> $a */
     public static function createFromArray(array $a): self
     {
+        $availableFor = isset($a['availableFor']) ? OperationModel::tryFrom((string) $a['availableFor']) : null;
+        $tier = isset($a['tier']) ? TierModel::tryFrom((string) $a['tier']) : null;
+
         return new self(
             domainName: (string) ($a['domainName'] ?? ''),
-            availableFor: (string) ($a['availableFor'] ?? OperationModel::NONE),
-            tier: (string) ($a['tier'] ?? 'UNKNOWN'),
+            availableFor: $availableFor ?? OperationModel::NONE,
+            tier: $tier ?? TierModel::UNKNOWN,
             price: array_map(
                 static fn(array $p) => PriceModel::createFromArray($p),
                 (array) ($a['price'] ?? []),

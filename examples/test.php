@@ -16,7 +16,8 @@ try {
     foreach ($domains->list as $d) {
         $name = $d->domain?->name ?? '(no domain)';
         $status = implode(',', $d->status);
-        echo sprintf("  %-30s status: %-20s expires: %d\n", $name, $status, $d->ets ?? 0);
+        $expires = $d->ets !== null ? date('Y-m-d', $d->ets) : '-';
+        echo sprintf("  %-30s status: %-20s expires: %s\n", $name, $status, $expires);
     }
     echo "\n";
 
@@ -30,11 +31,11 @@ try {
 
     echo "=== Domain Availability ===\n";
     $check = $client->checkDomain('example.com');
-    echo "example.com: availableFor={$check->availableFor} tier={$check->tier} prices=" . count($check->price) . "\n";
+    echo "example.com: availableFor={$check->availableFor->value} tier={$check->tier->value} prices=" . count($check->price) . "\n";
 
     $rand = 'xyzzy-test-' . time() . '.com';
     $check2 = $client->checkDomain($rand);
-    echo "{$rand}: availableFor={$check2->availableFor} tier={$check2->tier}\n";
+    echo "{$rand}: availableFor={$check2->availableFor->value} tier={$check2->tier->value}\n";
 
     echo "\nDone.\n";
 } catch (NicnamesException $e) {

@@ -1,0 +1,41 @@
+name: CI
+
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+    schedule:
+        # Weekly run to catch dependency rot before it blocks a release.
+        -   cron: '0 6 * * 1'
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                php-version: [ '8.4', '8.5' ]
+        steps:
+            -   uses: actions/checkout@v4
+
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ matrix.php-version }}
+                    coverage: pcov
+                    tools: composer:v2
+
+            -   name: Cache composer dependencies
+                uses: actions/cache@v4
+                with:
+                    path: ~/.composer/cache
+                    key: composer-${{ matrix.php-version }}-${{ hashFiles('composer.json') }}
+                    restore-keys: composer-${{ matrix.php-version }}-
+
+            -   run: composer install --no-interaction --no-progress
+
+            -   name: PHPUnit
+                run: vendor/bin/phpunit --coverage-text
+
+            -   name: PHPStan
+                run: vendor/bin/phpstan analyze --no-progress

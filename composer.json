@@ -2,7 +2,18 @@
     "name": "luchaninov/nicnames-client",
     "description": "PHP client for the Nicnames domain registrar REST API v2",
     "type": "library",
-    "license": "proprietary",
+    "license": "MIT",
+    "keywords": [
+        "nicnames",
+        "domain-registrar",
+        "domains",
+        "api-client",
+        "rest-client"
+    ],
+    "support": {
+        "issues": "https://github.com/luchaninov/nicnames-client/issues",
+        "source": "https://github.com/luchaninov/nicnames-client"
+    },
     "require": {
         "php": ">=8.4",
         "psr/log": "^3.0",

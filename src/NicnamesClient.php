@@ -17,9 +17,11 @@ use Luchaninov\NicnamesClient\Dto\OrderDomainModel;
 use Luchaninov\NicnamesClient\Dto\RenewDomainRequest;
 use Luchaninov\NicnamesClient\Dto\RestoreDomainRequest;
 use Luchaninov\NicnamesClient\Dto\TransferDomainRequest;
+use Luchaninov\NicnamesClient\Dto\UpdateNameServersRequest;
 use Luchaninov\NicnamesClient\Dto\UpdateWhoisPrivacyRequest;
+use Luchaninov\NicnamesClient\Exception\MalformedResponseException;
 
-class NicnamesClient
+class NicnamesClient implements NicnamesClientInterface
 {
     public function __construct(
         private readonly HttpTransport $transport,
@@ -30,8 +32,7 @@ class NicnamesClient
 
     public function listDomains(?ListParams $params = null): DomainList
     {
-        $body = ($params ?? new ListParams())->toArray();
-        $response = $this->transport->request('GET', '/domain', $body);
+        $response = $this->transport->request('GET', '/domain', $params?->toArray());
 
         return DomainList::createFromArray($response->body);
     }
@@ -70,18 +71,19 @@ class NicnamesClient
         return $this->domainOperation('POST', sprintf('/domain/%s/restore', rawurlencode($domainName)), $request->toArray());
     }
 
-    /** @param string[] $ns */
-    public function updateDomainNameServers(string $domainName, array $ns): DomainOperationResult
+    public function updateDomainNameServers(string $domainName, UpdateNameServersRequest $request): DomainOperationResult
     {
         return $this->domainOperation(
             'PATCH',
             sprintf('/domain/%s/update/ns', rawurlencode($domainName)),
-            ['ns' => array_values($ns)],
+            $request->toArray(),
         );
     }
 
-    public function updateDomainWhoisPrivacy(string $domainName, UpdateWhoisPrivacyRequest $request): DomainOperationResult
-    {
+    public function updateDomainWhoisPrivacy(
+        string $domainName,
+        UpdateWhoisPrivacyRequest $request,
+    ): DomainOperationResult {
         return $this->domainOperation(
             'PATCH',
             sprintf('/domain/%s/update/whois_privacy', rawurlencode($domainName)),
@@ -113,8 +115,7 @@ class NicnamesClient
 
     public function listContacts(?ListParams $params = null): ContactList
     {
-        $body = ($params ?? new ListParams())->toArray();
-        $response = $this->transport->request('GET', '/contact', $body);
+        $response = $this->transport->request('GET', '/contact', $params?->toArray());
 
         return ContactList::createFromArray($response->body);
     }
@@ -142,8 +143,13 @@ class NicnamesClient
     {
         $response = $this->transport->request($method, $path, $body);
 
-        if ($response->isAccepted()) {
-            return DomainOperationResult::fromJob((string) ($response->body['jobId'] ?? ''));
+        if ($response->isAsync()) {
+            $jobId = $response->body['jobId'] ?? null;
+            if (!is_string($jobId) || $jobId === '') {
+                throw new MalformedResponseException('202 Accepted response did not contain a non-empty jobId.');
+            }
+
+            return DomainOperationResult::fromJob($jobId);
         }
 
         return DomainOperationResult::fromOrder(OrderDomainModel::createFromArray($response->body));

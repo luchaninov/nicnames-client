@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Luchaninov\NicnamesClient;
 
+use JsonException;
 use Luchaninov\NicnamesClient\Exception\ApiException;
 use Luchaninov\NicnamesClient\Exception\ForbiddenException;
 use Luchaninov\NicnamesClient\Exception\InvalidParamPolicyException;
@@ -17,6 +18,7 @@ use Luchaninov\NicnamesClient\Exception\TransportException;
 use Luchaninov\NicnamesClient\Exception\UnauthorizedException;
 use Luchaninov\NicnamesClient\Exception\UnknownStatusException;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\HttpClient\Exception\ExceptionInterface as HttpClientException;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class HttpTransport
@@ -55,7 +57,7 @@ class HttpTransport
             $response = $this->httpClient->request($method, $url, $options);
             $status = $response->getStatusCode();
             $data = $response->toArray(false);
-        } catch (\Throwable $e) {
+        } catch (HttpClientException | JsonException $e) {
             $this->logger?->error('Nicnames transport error', [
                 'method' => $method,
                 'url' => $url,
@@ -84,9 +86,14 @@ class HttpTransport
     }
 
     /**
+     * Map an HTTP error response to the matching typed exception and throw it.
+     *
+     * Subclasses can override this to extend the result-code map (e.g. add a `RateLimitException`
+     * for HTTP 429) or to attach extra context to the thrown exception.
+     *
      * @param array<string, mixed> $data
      */
-    private function throwException(int $httpStatus, array $data): never
+    protected function throwException(int $httpStatus, array $data): never
     {
         $code = (int) ($data['code'] ?? 0);
         $message = (string) ($data['message'] ?? sprintf('HTTP %d', $httpStatus));

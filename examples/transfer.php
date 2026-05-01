@@ -42,9 +42,10 @@ foreach ($lines as $line) {
 
 $keys = array_column($rows, 'domain');
 ['list' => $keys, 'resuming' => $resuming] = applyResume($keys, $argv);
+$keysIndex = array_flip($keys);
 $rows = array_values(array_filter(
     $rows,
-    static fn(array $r) => in_array($r['domain'], $keys, true),
+    static fn(array $r) => isset($keysIndex[$r['domain']]),
 ));
 
 $client = createClient($env);

@@ -1,7 +1,7 @@
 # Nicnames API v2 PHP Client — Scaffold
 
-**Status:** implemented (2026-05-01) — `composer install`, `vendor/bin/phpunit` (80 tests / 262 assertions / 100% line coverage),
-`vendor/bin/phpstan analyze` (level 5) all green.
+**Status:** implemented (2026-05-01) — `composer install`, `vendor/bin/phpunit` (102 tests / 291 assertions / 100% line coverage),
+`vendor/bin/phpstan analyze` (level 8) all green.
 
 ## Context
 
@@ -214,12 +214,12 @@ match ($errorCode) {
 - `composer.json` — `php >=8.4`, `psr/log ^3.0`, `symfony/http-client ^6.4 || ^7.4 || ^8.0`; dev `phpstan/phpstan ^2.1`,
   `phpunit/phpunit ^13.0`, `monolog/monolog ^3.0`; PSR-4 `Luchaninov\\NicnamesClient\\` → `src/`,
   `Luchaninov\\NicnamesClient\\Tests\\` → `tests/`.
-- `phpstan.neon` — level 5, paths `src` + `tests`.
+- `phpstan.neon` — level 8, paths `src` + `tests`.
 - `phpunit.xml.dist` — `failOnRisky="true" failOnWarning="true"`.
 - `.editorconfig` — UTF-8, LF, 4 spaces.
 - `.gitignore` — `vendor/`, `composer.lock`, `.env.local`, `var/`, `.phpunit.result.cache`, `.idea/`.
 
-## Tests (80 tests, 262 assertions, 100% line/method/class coverage — all green)
+## Tests (102 tests, 291 assertions, 100% line/method/class coverage — all green)
 
 - `HttpTransportTest`
     - `x-api-key` header present on every request
@@ -253,9 +253,9 @@ results to stdout, and supports `--resume <last>` for crash recovery.
 ## Verification (passed 2026-05-01)
 
 1. `composer install` — succeeded.
-2. `vendor/bin/phpstan analyze` — `[OK] No errors` at level 5. (Needs sandbox disabled because PHPStan binds a local TCP
+2. `vendor/bin/phpstan analyze` — `[OK] No errors` at level 8. (Needs sandbox disabled because PHPStan binds a local TCP
    port for its worker pool.)
-3. `vendor/bin/phpunit --coverage-text` — 80 tests, 262 assertions, all green; 100% line / method / class coverage (PCOV).
+3. `vendor/bin/phpunit --coverage-text` — 102 tests, 291 assertions, all green; 100% line / method / class coverage (PCOV).
 4. `php -l examples/*.php` — all parse cleanly.
 5. **Pending:** real API smoke test — drop a `.env.local` with a real `NICNAMES_API_KEY` and run
    `php examples/test.php`.

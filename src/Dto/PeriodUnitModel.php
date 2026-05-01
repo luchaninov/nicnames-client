@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Luchaninov\NicnamesClient\Dto;
 
-final class PeriodUnitModel
+enum PeriodUnitModel: string
 {
-    public const string YEARS = 'YEARS';
-    public const string MONTHS = 'MONTHS';
+    case YEARS = 'YEARS';
+    case MONTHS = 'MONTHS';
 }

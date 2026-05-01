@@ -10,7 +10,7 @@ OpenAPI spec lives in `doc/openapi.json`.
 
 - `composer install` — install dependencies
 - `vendor/bin/phpunit` — run tests
-- `vendor/bin/phpstan analyze` — static analysis (level 5)
+- `vendor/bin/phpstan analyze` — static analysis (level 8)
 
 ## Architecture
 
@@ -40,4 +40,4 @@ OpenAPI spec lives in `doc/openapi.json`.
 - Namespace: `Luchaninov\NicnamesClient`
 - `final readonly` classes for DTOs (the inheritance pair `OrderModel` / `OrderDomainModel` keeps the parent non-final because the OpenAPI discriminator allows future order subtypes)
 - Tests use `Symfony\Component\HttpClient\MockHttpClient` + `MockResponse`
-- PHPStan level 5, PHPUnit 13
+- PHPStan level 8, PHPUnit 13

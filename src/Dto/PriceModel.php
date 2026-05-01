@@ -9,7 +9,7 @@ final readonly class PriceModel
     public function __construct(
         public float $amt,
         public int $ccy,
-        public string $op,
+        public OperationModel $op,
         public PeriodModel $period,
     ) {
     }
@@ -17,10 +17,12 @@ final readonly class PriceModel
     /** @param array<string, mixed> $a */
     public static function createFromArray(array $a): self
     {
+        $op = isset($a['op']) ? OperationModel::tryFrom((string) $a['op']) : null;
+
         return new self(
             amt: (float) ($a['amt'] ?? 0),
             ccy: (int) ($a['ccy'] ?? 0),
-            op: (string) ($a['op'] ?? OperationModel::NONE),
+            op: $op ?? OperationModel::NONE,
             period: PeriodModel::createFromArray((array) ($a['period'] ?? [])),
         );
     }
@@ -31,7 +33,7 @@ final readonly class PriceModel
         return [
             'amt' => $this->amt,
             'ccy' => $this->ccy,
-            'op' => $this->op,
+            'op' => $this->op->value,
             'period' => $this->period->toArray(),
         ];
     }

@@ -34,6 +34,20 @@ foreach ($domains->list as $order) {
 }
 ```
 
+### Automatic retries
+
+`HttpTransport` accepts any `Symfony\Contracts\HttpClient\HttpClientInterface`,
+so transient failures (5xx, network blips) can be handled by wrapping with
+Symfony's `RetryableHttpClient`:
+
+```php
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\HttpClient\RetryableHttpClient;
+
+$http = new RetryableHttpClient(HttpClient::create(), maxRetries: 3);
+$transport = new HttpTransport($http, apiKey: 'YOUR-API-KEY');
+```
+
 ### Domain info & availability
 
 ```php
@@ -105,9 +119,13 @@ $one = $client->infoContact('c987654321');
 ### Update nameservers / WHOIS privacy
 
 ```php
+use Luchaninov\NicnamesClient\Dto\UpdateNameServersRequest;
 use Luchaninov\NicnamesClient\Dto\UpdateWhoisPrivacyRequest;
 
-$client->updateDomainNameServers('example.com', ['ns1.example.com', 'ns2.example.com']);
+$client->updateDomainNameServers(
+    'example.com',
+    new UpdateNameServersRequest(['ns1.example.com', 'ns2.example.com']),
+);
 $client->updateDomainWhoisPrivacy('example.com', new UpdateWhoisPrivacyRequest(
     registrant: UpdateWhoisPrivacyRequest::ENABLE,
 ));
@@ -116,29 +134,33 @@ $client->updateDomainWhoisPrivacy('example.com', new UpdateWhoisPrivacyRequest(
 ### Webhooks
 
 The API delivers asynchronous results and events as `application/x-www-form-urlencoded`
-POSTs containing `object` (JSON), `timestamp`, and `signature` fields. Verify the
-HMAC-SHA256 signature and parse the event into a typed DTO:
+POSTs containing `object` (JSON), `timestamp`, and `signature` fields. The simplest
+integration uses `WebhookHandler`, which verifies the HMAC-SHA256 signature, checks
+that the timestamp is fresh (default 5 min anti-replay window), and decodes the JSON
+into a typed event in one call:
 
 ```php
 use Luchaninov\NicnamesClient\Dto\WebhookJobResultEvent;
-use Luchaninov\NicnamesClient\Webhook\WebhookEventFactory;
+use Luchaninov\NicnamesClient\Webhook\WebhookException;
+use Luchaninov\NicnamesClient\Webhook\WebhookHandler;
 use Luchaninov\NicnamesClient\Webhook\WebhookVerifier;
 
-$payload   = $_POST['object'];
-$timestamp = $_POST['timestamp'];
-$signature = $_POST['signature'];
+$handler = new WebhookHandler(new WebhookVerifier(secret: 'YOUR-WEBHOOK-SECRET'));
 
-$verifier = new WebhookVerifier(secret: 'YOUR-WEBHOOK-SECRET');
-if (!$verifier->isValid($payload, $timestamp, $signature)) {
+try {
+    $event = $handler->handle($_POST);
+} catch (WebhookException) {
     http_response_code(401);
     exit;
 }
 
-$event = WebhookEventFactory::fromJson($payload);
 if ($event instanceof WebhookJobResultEvent) {
     // $event->jobId, $event->code (e.g. 441000 SUCCESS, 442xxx error codes)
 }
 ```
+
+If you need finer control, `WebhookVerifier::isValid()` and `WebhookEventFactory::fromJson()`
+are public and composable.
 
 ## Error handling
 
@@ -172,7 +194,12 @@ try {
 }
 ```
 
-HTTP / network failures throw `TransportException`.
+HTTP / network failures throw `TransportException`. A 2xx response that doesn't conform to
+the spec (e.g. an HTTP 202 without a `jobId`) throws `MalformedResponseException`.
+
+Webhook validation failures (missing fields, bad signature, stale timestamp, malformed JSON)
+throw `Webhook\WebhookException` — a separate hierarchy from `NicnamesException`, since they
+originate in your inbound traffic, not from the API.
 
 ## Development
 
@@ -184,14 +211,7 @@ vendor/bin/phpstan analyze
 
 ### Manual smoke test
 
-Create a `.env.local` in the project root (gitignored):
-
-```ini
-NICNAMES_API_KEY=your-api-key
-NICNAMES_BASE_URL=https://api.nicnames.com/2  ; optional override
-NICNAMES_DEFAULT_REGISTRANT=c987654321        ; required by register.php/transfer.php
-```
-
+Copy `.env.local.example` to `.env.local` (gitignored) and fill in your API key.
 Then run:
 
 ```bash
@@ -214,3 +234,13 @@ php examples/privacy.php  --input domains.txt --off --apply-to-all > privacy-off
 # Resume any script after interruption (skip already-processed entries)
 php examples/register.php --input domains.txt --registrant c987654321 --resume last-done.com >> registered.tsv
 ```
+
+## License
+
+MIT
+
+
+## Help Ukraine
+
+If you find this project useful, please consider supporting Ukraine:
+🇺🇦 [Donate](https://commission.europa.eu/topics/eu-solidarity-ukraine/donate_en)

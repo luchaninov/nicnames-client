@@ -9,7 +9,9 @@ use Luchaninov\NicnamesClient\Dto\DomainCheckResult;
 use Luchaninov\NicnamesClient\Dto\DomainList;
 use Luchaninov\NicnamesClient\Dto\DomainModel;
 use Luchaninov\NicnamesClient\Dto\EmailVerificationStatus;
+use Luchaninov\NicnamesClient\Dto\OperationModel;
 use Luchaninov\NicnamesClient\Dto\OrderModel;
+use Luchaninov\NicnamesClient\Dto\TierModel;
 use PHPUnit\Framework\TestCase;
 
 class ResponseDtoTest extends TestCase
@@ -39,6 +41,19 @@ class ResponseDtoTest extends TestCase
         self::assertSame('common', $order->type);
         self::assertSame([], $order->status);
         self::assertNull($order->ets);
+    }
+
+    public function testOrderModelDiscriminatorDispatchesToDomain(): void
+    {
+        $order = OrderModel::createFromArray([
+            'oid' => 'o1',
+            'type' => 'domain',
+            'status' => ['active'],
+            'cts' => 1,
+            'uts' => 1,
+            'domain' => ['name' => 'example.com', 'registrant' => 'c1'],
+        ]);
+        self::assertInstanceOf(\Luchaninov\NicnamesClient\Dto\OrderDomainModel::class, $order);
     }
 
     public function testDomainModelDecode(): void
@@ -121,7 +136,8 @@ class ResponseDtoTest extends TestCase
             ],
         ]);
         self::assertSame('example.com', $check->domainName);
-        self::assertSame('PREMIUM', $check->tier);
+        self::assertSame(OperationModel::CREATE, $check->availableFor);
+        self::assertSame(TierModel::PREMIUM, $check->tier);
         self::assertCount(1, $check->price);
         self::assertSame(99.0, $check->price[0]->amt);
     }
@@ -130,9 +146,19 @@ class ResponseDtoTest extends TestCase
     {
         $check = DomainCheckResult::createFromArray([]);
         self::assertSame('', $check->domainName);
-        self::assertSame('NONE', $check->availableFor);
-        self::assertSame('UNKNOWN', $check->tier);
+        self::assertSame(OperationModel::NONE, $check->availableFor);
+        self::assertSame(TierModel::UNKNOWN, $check->tier);
         self::assertSame([], $check->price);
+    }
+
+    public function testDomainCheckResultUnknownEnumValuesFallBack(): void
+    {
+        $check = DomainCheckResult::createFromArray([
+            'availableFor' => 'EXOTIC_OP',
+            'tier' => 'UNDOCUMENTED',
+        ]);
+        self::assertSame(OperationModel::NONE, $check->availableFor);
+        self::assertSame(TierModel::UNKNOWN, $check->tier);
     }
 
     public function testEmailVerificationStatusFull(): void

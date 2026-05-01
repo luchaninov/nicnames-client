@@ -7,7 +7,7 @@ namespace Luchaninov\NicnamesClient\Dto;
 final readonly class PeriodModel
 {
     public function __construct(
-        public string $unit,
+        public PeriodUnitModel $unit,
         public int $value,
     ) {
     }
@@ -15,8 +15,10 @@ final readonly class PeriodModel
     /** @param array<string, mixed> $a */
     public static function createFromArray(array $a): self
     {
+        $unit = isset($a['unit']) ? PeriodUnitModel::tryFrom((string) $a['unit']) : null;
+
         return new self(
-            unit: (string) ($a['unit'] ?? PeriodUnitModel::YEARS),
+            unit: $unit ?? PeriodUnitModel::YEARS,
             value: (int) ($a['value'] ?? 1),
         );
     }
@@ -25,7 +27,7 @@ final readonly class PeriodModel
     public function toArray(): array
     {
         return [
-            'unit' => $this->unit,
+            'unit' => $this->unit->value,
             'value' => $this->value,
         ];
     }

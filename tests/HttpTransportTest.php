@@ -20,7 +20,6 @@ use Luchaninov\NicnamesClient\HttpTransport;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
-use Psr\Log\LoggerInterface;
 use Stringable;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
@@ -47,7 +46,7 @@ class HttpTransportTest extends TestCase
     public function testReturnsBodyOn200(): void
     {
         $mock = new MockHttpClient([
-            new MockResponse(json_encode(['oid' => 'o1', 'type' => 'domain']), ['http_code' => 200]),
+            new MockResponse(json_encode(['oid' => 'o1', 'type' => 'domain'], JSON_THROW_ON_ERROR), ['http_code' => 200]),
         ]);
         $transport = new HttpTransport($mock, 'KEY');
         $response = $transport->request('GET', '/domain/x/info');
@@ -58,11 +57,11 @@ class HttpTransportTest extends TestCase
     public function testRecognises202(): void
     {
         $mock = new MockHttpClient([
-            new MockResponse(json_encode(['jobId' => 'JOB42']), ['http_code' => 202]),
+            new MockResponse(json_encode(['jobId' => 'JOB42'], JSON_THROW_ON_ERROR), ['http_code' => 202]),
         ]);
         $transport = new HttpTransport($mock, 'KEY');
         $response = $transport->request('POST', '/domain/x/create', []);
-        self::assertTrue($response->isAccepted());
+        self::assertTrue($response->isAsync());
         self::assertSame('JOB42', $response->body['jobId']);
     }
 
@@ -92,7 +91,7 @@ class HttpTransportTest extends TestCase
                     'code' => $code,
                     'message' => 'Test error',
                     'traceId' => 'trace-xyz',
-                ]),
+                ], JSON_THROW_ON_ERROR),
                 ['http_code' => 400],
             ),
         ]);
@@ -122,7 +121,7 @@ class HttpTransportTest extends TestCase
     public function testErrorResponseWithoutTraceIdHasNullTraceId(): void
     {
         $mock = new MockHttpClient([
-            new MockResponse(json_encode(['code' => 442007, 'message' => 'gone']), ['http_code' => 404]),
+            new MockResponse(json_encode(['code' => 442007, 'message' => 'gone'], JSON_THROW_ON_ERROR), ['http_code' => 404]),
         ]);
         $transport = new HttpTransport($mock, 'KEY');
         try {
@@ -137,7 +136,7 @@ class HttpTransportTest extends TestCase
     public function testErrorResponseWithoutCodeFallsBackToHttpStatusMessage(): void
     {
         $mock = new MockHttpClient([
-            new MockResponse(json_encode([]), ['http_code' => 500]),
+            new MockResponse(json_encode([], JSON_THROW_ON_ERROR), ['http_code' => 500]),
         ]);
         $transport = new HttpTransport($mock, 'KEY');
         try {
@@ -209,7 +208,7 @@ class HttpTransportTest extends TestCase
         };
 
         $mock = new MockHttpClient([
-            new MockResponse(json_encode(['code' => 442007, 'message' => 'gone']), ['http_code' => 404]),
+            new MockResponse(json_encode(['code' => 442007, 'message' => 'gone'], JSON_THROW_ON_ERROR), ['http_code' => 404]),
         ]);
         $transport = new HttpTransport($mock, 'KEY', 'https://api.nicnames.com/2', $logger);
 
@@ -248,13 +247,5 @@ class HttpTransportTest extends TestCase
             array_map(fn(array $r) => $r['level'] === 'error' ? (string) $r['message'] : null, $logger->records),
         );
         self::assertContains('Nicnames transport error', $errorMessages);
-    }
-
-    /**
-     * Quiet PHPStan: `LoggerInterface` is referenced via the anonymous class extending AbstractLogger.
-     */
-    public function testLoggerInterfaceIsAvailable(): void
-    {
-        self::assertTrue(interface_exists(LoggerInterface::class));
     }
 }

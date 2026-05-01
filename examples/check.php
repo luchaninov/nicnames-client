@@ -45,7 +45,7 @@ foreach ($domains as $domain) {
             $lowestAmt = (string) $minPrice->amt;
             $ccy = (string) $minPrice->ccy;
         }
-        echo "{$domain}\t{$check->availableFor}\t{$check->tier}\t{$lowestAmt}\t{$ccy}\n";
+        echo "{$domain}\t{$check->availableFor->value}\t{$check->tier->value}\t{$lowestAmt}\t{$ccy}\n";
     } catch (NicnamesException $e) {
         fwrite(STDERR, "Check failed for {$domain}: [{$e->getCode()}] {$e->getMessage()}\n");
         echo "{$domain}\tERROR\t\t\t\n";

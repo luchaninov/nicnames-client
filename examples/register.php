@@ -58,7 +58,7 @@ foreach ($domains as $domain) {
         // Get a price quote for the registration term.
         $check = $client->checkDomain($domain);
         if ($check->availableFor !== OperationModel::CREATE) {
-            fwrite(STDERR, "Not available for CREATE: {$domain} ({$check->availableFor})\n");
+            fwrite(STDERR, "Not available for CREATE: {$domain} ({$check->availableFor->value})\n");
             echo "{$domain}\t\t\tNOT_AVAILABLE\n";
             continue;
         }

@@ -6,20 +6,20 @@ namespace Luchaninov\NicnamesClient\Dto;
 
 final readonly class DomainOperationResult
 {
-    public function __construct(
-        public ?OrderDomainModel $order = null,
-        public ?string $jobId = null,
+    private function __construct(
+        public ?OrderDomainModel $order,
+        public ?string $jobId,
     ) {
     }
 
     public static function fromOrder(OrderDomainModel $order): self
     {
-        return new self(order: $order);
+        return new self($order, null);
     }
 
     public static function fromJob(string $jobId): self
     {
-        return new self(jobId: $jobId);
+        return new self(null, $jobId);
     }
 
     public function isAsync(): bool

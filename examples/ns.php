@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/_lib.php';
 
+use Luchaninov\NicnamesClient\Dto\UpdateNameServersRequest;
 use Luchaninov\NicnamesClient\Exception\NicnamesException;
 
 $env = loadEnv();
@@ -36,9 +37,10 @@ foreach ($lines as $line) {
 
 $keys = array_column($rows, 'domain');
 ['list' => $keys, 'resuming' => $resuming] = applyResume($keys, $argv);
+$keysIndex = array_flip($keys);
 $rows = array_values(array_filter(
     $rows,
-    static fn(array $r) => in_array($r['domain'], $keys, true),
+    static fn(array $r) => isset($keysIndex[$r['domain']]),
 ));
 
 $client = createClient($env);
@@ -54,7 +56,7 @@ foreach ($rows as $row) {
     $status = 'OK';
 
     try {
-        $result = $client->updateDomainNameServers($domain, $row['ns']);
+        $result = $client->updateDomainNameServers($domain, new UpdateNameServersRequest($row['ns']));
         if ($result->isAsync()) {
             $jobId = $result->jobId ?? '';
             $status = 'ASYNC';

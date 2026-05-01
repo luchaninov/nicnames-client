@@ -71,7 +71,7 @@ class WebhookEventFactoryTest extends TestCase
             'eventId' => 'evt-json',
             'eventType' => 'job_result',
             'eventData' => ['jobId' => 'J', 'code' => 441000],
-        ]);
+        ], JSON_THROW_ON_ERROR);
 
         $event = WebhookEventFactory::fromJson($json);
         self::assertInstanceOf(WebhookJobResultEvent::class, $event);
