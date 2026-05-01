@@ -3,6 +3,9 @@
 PHP client for the [Nicnames](https://nicnames.com) domain registrar REST API v2.
 Full API reference: [api.nicnames.com/docs/2/](https://api.nicnames.com/docs/2/).
 
+> **Disclaimer:** This is an unofficial, personal project and is not affiliated with,
+> endorsed by, or maintained by Nicnames. Use at your own risk.
+
 ## Requirements
 
 - PHP 8.4+
