@@ -160,6 +160,33 @@ if ($event instanceof WebhookJobResultEvent) {
 }
 ```
 
+In a Symfony controller, pass the request payload as an array:
+
+```php
+use Luchaninov\NicnamesClient\Dto\WebhookJobResultEvent;
+use Luchaninov\NicnamesClient\Webhook\WebhookException;
+use Luchaninov\NicnamesClient\Webhook\WebhookHandler;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+
+#[Route('/webhooks/nicnames', methods: ['POST'])]
+public function __invoke(Request $request, WebhookHandler $handler): Response
+{
+    try {
+        $event = $handler->handle($request->request->all());
+    } catch (WebhookException) {
+        return new Response('', Response::HTTP_UNAUTHORIZED);
+    }
+
+    if ($event instanceof WebhookJobResultEvent) {
+        // $event->jobId, $event->code
+    }
+
+    return new Response('', Response::HTTP_NO_CONTENT);
+}
+```
+
 If you need finer control, `WebhookVerifier::isValid()` and `WebhookEventFactory::fromJson()`
 are public and composable.
 
