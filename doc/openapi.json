@@ -1,0 +1,2103 @@
+{
+  "openapi": "3.1.0",
+  "x-stoplight": {
+    "id": "ft5onjbsajgbp"
+  },
+  "servers": [
+    {
+      "url": "https://api.nicnames.com/2",
+      "description": "Live Server"
+    }
+  ],
+  "info": {
+    "title": "NicNames API v2",
+    "version": "2.0",
+    "contact": {
+      "email": "support@nicnames.com"
+    },
+    "x-logo": {
+      "url": "/docs/logo-email.png"
+    },
+    "termsOfService": "https://nicnames.com/en/legal",
+    "description": "###  Glossary  \n* OID - Order ID  \n* CTS - Creation date and time  \n* UTS - Modification date and time  \n* ETS - Expiration date and time  \n\n###  Time\nAny field of time type represents the number of seconds elapsed since the Unix epoch, which is 1970-01-01T00:00:00Z.\n\n### Webhook URL for Asynchronous Results and Events\n\nFor operations returning a 202 (Accepted) status code, the final result will be delivered asynchronously via a webhook. Your system will receive a POST request at the specified URL with the following parameters sent as application/x-www-form-urlencoded data:\n- object: Event data in JSON format.\n- timestamp: The Unix timestamp (in milliseconds) representing the time when the webhook notification was sent.\n- signature: A signature generated using the HMAC-SHA256 algorithm. This signature is created by concatenating the object (event data in JSON format) and timestamp as a string. The resulting string is then signed with your webhook_secret key using the HMAC-SHA256 algorithm. The final signature will be returned in hexadecimal format (lowercase letters).\n\n### Codes\nList of possible result and error codes returned by this API\n* `440000` - UNKNOWN\n* `441000` - SUCCESS\n* `441001` - PENDING\n* `442001` - ERROR_REMOTE\n* `442002` - ERROR_EXCEPTION\n* `442003` - ERROR_FORBIDDEN\n* `442006` - ERROR_UNKNOWN_STATUS\n* `442007` - ERROR_NOT_FOUND\n* `442008` - ERROR_STATUS_PROHIBITED\n* `442009` - ERROR_PARAM_VALUE_POLICY\n* `442010` - ERROR_INVALID_PARAM_VALUE\n* `442011` - ERROR_PARAM_VALUE_REQUIRED\n* `442012` - ERROR_UNAUTHORIZED\n\n###  Statuses\nList of possible status codes returned by this API\n* `new` – The order has been created but not yet paid.\n* `active` – The order is active and operational.\n* `expired` – The order has expired and is no longer active. Renewal is required to restore it.\n* `pendingUpdate` – A order update request is in progress.\n* `arrested` – The order has been restricted or suspended due to policy violation, legal action, or administrative hold.\n* `redemptionPeriod` – The order has expired and is in the redemption grace period. It can still be restored for an additional fee.\n* `closed` – The order has been deleted and cannot be restored.\n* `pendingRegistrantEmailVerification` – The domain is awaiting email verification by the registrant. A confirmation request has been sent but not yet completed.\n* `lockRegistrantEmailVerification` – The domain is locked because the registrant's email address has not been verified.\n* `lockExpiration` – The domain is locked due to expiration and requires renewal.\n* `lockTransfer` – The domain is locked to prevent transfer to another registrar.\n* `lockRegistrant60` – The domain is locked and prevents changes to the registrant’s information for 60 days.\n* `lockTransfer60` – The domain is locked and prevents transfer to another registrar for 60 days.\n* `tokenized` - The domain is represented as a digital token.\n* `unknown` – The order is in an undefined or undocumented state. This may indicate an internal error or an unexpected status value.\n"
+  },
+  "paths": {
+    "/domain": {
+      "get": {
+        "summary": "List domains",
+        "x-stoplight": {
+          "id": "6du2gg2y027du"
+        },
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "total"
+                  ],
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "x-stoplight": {
+                        "id": "qow1eh21ubp2p"
+                      },
+                      "format": "int64",
+                      "example": 12345
+                    },
+                    "list": {
+                      "type": "array",
+                      "x-stoplight": {
+                        "id": "d8tz16oz2hl6d"
+                      },
+                      "items": {
+                        "$ref": "#/components/schemas/OrderDomainModel",
+                        "x-stoplight": {
+                          "id": "11r02if7oti3h"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "listDomains",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListParams"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/domain/{domainName}/info": {
+      "get": {
+        "summary": "Info domain",
+        "x-stoplight": {
+          "id": "8k4stectp7nxb"
+        },
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDomainModel"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "infoDomain"
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string",
+            "example": "example.com",
+            "minLength": 1,
+            "maxLength": 253
+          },
+          "name": "domainName",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
+    "/domain/{domainName}/create": {
+      "post": {
+        "summary": "Create a domain",
+        "x-stoplight": {
+          "id": "85raoln5dneey"
+        },
+        "tags": [],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDomainModel"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "jobId"
+                  ],
+                  "properties": {
+                    "jobId": {
+                      "type": "string",
+                      "x-stoplight": {
+                        "id": "3jz6cm4p8dmxw"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "createDomain",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDomainModel"
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string",
+            "example": "example.com",
+            "minLength": 1,
+            "maxLength": 253
+          },
+          "name": "domainName",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
+    "/domain/{domainName}/transfer": {
+      "post": {
+        "summary": "Transfer a domain",
+        "x-stoplight": {
+          "id": "lf0ver1ka84gm"
+        },
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDomainModel"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "jobId"
+                  ],
+                  "properties": {
+                    "jobId": {
+                      "type": "string",
+                      "x-stoplight": {
+                        "id": "z6r7vx2851t56"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "transferDomain",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferDomainModel"
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string",
+            "example": "example.com",
+            "minLength": 1,
+            "maxLength": 253
+          },
+          "name": "domainName",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
+    "/domain/{domainName}/renew": {
+      "post": {
+        "summary": "Renew a domain",
+        "x-stoplight": {
+          "id": "5vbwi6wu32du3"
+        },
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDomainModel"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "jobId"
+                  ],
+                  "properties": {
+                    "jobId": {
+                      "type": "string",
+                      "x-stoplight": {
+                        "id": "0qfwkaptwkuyl"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "renewDomain",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenewDomainModel"
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string",
+            "example": "example.com",
+            "minLength": 1,
+            "maxLength": 253
+          },
+          "name": "domainName",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
+    "/domain/{domainName}/update/ns": {
+      "patch": {
+        "summary": "Update a domain name servers",
+        "x-stoplight": {
+          "id": "om83iq4235ekc"
+        },
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDomainModel"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "jobId"
+                  ],
+                  "properties": {
+                    "jobId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "updateDomainNameServers",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "ns"
+                ],
+                "properties": {
+                  "ns": {
+                    "type": "array",
+                    "x-stoplight": {
+                      "id": "me8ccjl5wyve0"
+                    },
+                    "minItems": 0,
+                    "maxItems": 13,
+                    "items": {
+                      "x-stoplight": {
+                        "id": "ouaeydy6mul3q"
+                      },
+                      "type": "string",
+                      "example": "ns1.example.com"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string",
+            "example": "example.com",
+            "minLength": 1,
+            "maxLength": 253
+          },
+          "name": "domainName",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
+    "/domain/{domainName}/update/whois_privacy": {
+      "patch": {
+        "summary": "Update a domain whois privacy",
+        "x-stoplight": {
+          "id": "ns7tjc0fgppp4"
+        },
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDomainModel"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "jobId"
+                  ],
+                  "properties": {
+                    "jobId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "updateDomainWhoisPrivacy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "registrant": {
+                    "x-stoplight": {
+                      "id": "zbv8mocemcdo2"
+                    },
+                    "enum": [
+                      "enable",
+                      "disable"
+                    ]
+                  },
+                  "admin": {
+                    "x-stoplight": {
+                      "id": "na7lc8kfgi6dh"
+                    },
+                    "enum": [
+                      "enable",
+                      "disable"
+                    ]
+                  },
+                  "tech": {
+                    "x-stoplight": {
+                      "id": "uru6eq2h089ts"
+                    },
+                    "enum": [
+                      "enable",
+                      "disable"
+                    ]
+                  },
+                  "billing": {
+                    "x-stoplight": {
+                      "id": "lqhdilnyjjd2f"
+                    },
+                    "enum": [
+                      "enable",
+                      "disable"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string",
+            "example": "example.com",
+            "minLength": 1,
+            "maxLength": 253
+          },
+          "name": "domainName",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
+    "/domain/{domainName}/restore": {
+      "post": {
+        "summary": "Restore a domain",
+        "x-stoplight": {
+          "id": "wpurp43hai547"
+        },
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDomainModel"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "jobId"
+                  ],
+                  "properties": {
+                    "jobId": {
+                      "type": "string",
+                      "x-stoplight": {
+                        "id": "qsewt2a6doy47"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "restoreDomain",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreDomainModel"
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string",
+            "example": "example.com",
+            "minLength": 1,
+            "maxLength": 253
+          },
+          "name": "domainName",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
+    "/contact": {
+      "get": {
+        "summary": "List contacts",
+        "x-stoplight": {
+          "id": "7wm08q2b6y7f5"
+        },
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "total"
+                  ],
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "x-stoplight": {
+                        "id": "bnv26d71ymvmo"
+                      },
+                      "format": "int64",
+                      "example": 12345
+                    },
+                    "list": {
+                      "type": "array",
+                      "x-stoplight": {
+                        "id": "nmgftwemwhe4i"
+                      },
+                      "items": {
+                        "$ref": "#/components/schemas/ContactModel",
+                        "x-stoplight": {
+                          "id": "kurfl9pwewqpk"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "listContacts",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListParams"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a contact",
+        "x-stoplight": {
+          "id": "o1ya00msgshuo"
+        },
+        "tags": [],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactModel"
+                },
+                "examples": {
+                  "Example 1": {
+                    "value": {
+                      "contactId": "c987654321",
+                      "firstName": "John",
+                      "lastName": "Doe",
+                      "org": "Acme Corporation",
+                      "orgPhone": "+15551234567",
+                      "cc": "us",
+                      "pc": "62704",
+                      "sp": "IL",
+                      "city": "Springfield",
+                      "addr": "123 Main Street",
+                      "email": "john.doe@example.com",
+                      "phone": "+15551234567",
+                      "phonePolicy": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "createContact",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "firstName",
+                  "lastName",
+                  "cc",
+                  "pc",
+                  "sp",
+                  "city",
+                  "addr",
+                  "email",
+                  "phone",
+                  "phonePolicy"
+                ],
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "qc7iez0dnp6fo"
+                    },
+                    "example": "John"
+                  },
+                  "middleName": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "ow5y94c4adet9"
+                    }
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "6s1amxoz8jdgg"
+                    },
+                    "example": "Doe"
+                  },
+                  "org": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "r8olbws755h6p"
+                    },
+                    "example": "Acme Corporation"
+                  },
+                  "orgPhone": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "tdrkuesm75eyl"
+                    },
+                    "example": "+15551234567"
+                  },
+                  "cc": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "p8qembibsgoeg"
+                    },
+                    "example": "us"
+                  },
+                  "pc": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "r3672evw3b9om"
+                    },
+                    "example": "19713"
+                  },
+                  "sp": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "y8c7qrmwque6j"
+                    },
+                    "example": "DE"
+                  },
+                  "city": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "dj6njp4l2asdj"
+                    },
+                    "example": "Newark"
+                  },
+                  "addr": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "c6wrc6x9tlqao"
+                    },
+                    "example": "123 Main Street"
+                  },
+                  "email": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "zmu253wh3o4vx"
+                    },
+                    "example": "john.doe@example.com"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "jbu25krbbmzto"
+                    },
+                    "example": "+15551234567"
+                  },
+                  "phonePolicy": {
+                    "type": "boolean",
+                    "x-stoplight": {
+                      "id": "8gsakt901mb1l"
+                    }
+                  },
+                  "fax": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "xepqad9tiuocw"
+                    }
+                  }
+                }
+              },
+              "examples": {
+                "Example 1": {
+                  "value": {
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "org": "Acme Corporation",
+                    "orgPhone": "+15551234567",
+                    "cc": "us",
+                    "pc": "19713",
+                    "sp": "DE",
+                    "city": "Newark",
+                    "addr": "123 Main Street",
+                    "email": "john.doe@example.com",
+                    "phone": "+15551234567",
+                    "phonePolicy": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contact/{contactId}/info": {
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "contactId",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "get": {
+        "summary": "Info contact",
+        "x-stoplight": {
+          "id": "s9gbnda3dcezc"
+        },
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactModel"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-contact-contactId-info"
+      }
+    },
+    "/domain/{domainName}/check": {
+      "get": {
+        "summary": "Check domain availability",
+        "x-stoplight": {
+          "id": "xdlna196zpn9j"
+        },
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "domainName",
+                    "availableFor",
+                    "tier",
+                    "price"
+                  ],
+                  "properties": {
+                    "domainName": {
+                      "type": "string",
+                      "x-stoplight": {
+                        "id": "3exqde0e6igrf"
+                      },
+                      "readOnly": true
+                    },
+                    "availableFor": {
+                      "$ref": "#/components/schemas/OperationModel",
+                      "x-stoplight": {
+                        "id": "tt80hl2n44jjk"
+                      }
+                    },
+                    "tier": {
+                      "x-stoplight": {
+                        "id": "3go7o5qg83dg3"
+                      },
+                      "enum": [
+                        "REGULAR",
+                        "PREMIUM",
+                        "UNKNOWN"
+                      ],
+                      "readOnly": true
+                    },
+                    "price": {
+                      "type": "array",
+                      "x-stoplight": {
+                        "id": "w9eix5i5u7qy6"
+                      },
+                      "items": {
+                        "$ref": "#/components/schemas/PriceModel",
+                        "x-stoplight": {
+                          "id": "c1mxkx6kpwb53"
+                        }
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "Example 1": {
+                    "value": {
+                      "domainName": "string",
+                      "availableFor": "CREATE",
+                      "tier": "REGULAR",
+                      "price": [
+                        {
+                          "amt": 12.34,
+                          "ccy": 840,
+                          "op": "CREATE",
+                          "period": {
+                            "unit": "YEARS",
+                            "value": 1
+                          }
+                        },
+                        {
+                          "amt": 23.45,
+                          "ccy": 840,
+                          "op": "CREATE",
+                          "period": {
+                            "unit": "YEARS",
+                            "value": 2
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "checkDomain"
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string",
+            "example": "example.com",
+            "minLength": 1,
+            "maxLength": 253
+          },
+          "name": "domainName",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
+    "/domain/{domainName}/registrant_email_verification": {
+      "post": {
+        "summary": "Resend registrant email verification email",
+        "x-stoplight": {
+          "id": "58abn8b9t9qh6"
+        },
+        "tags": [],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "x-stoplight": {
+                        "id": "ft4had54r5uaz"
+                      },
+                      "format": "int32",
+                      "example": 123456
+                    },
+                    "email": {
+                      "type": "string",
+                      "x-stoplight": {
+                        "id": "tfazqgrwgabvk"
+                      },
+                      "example": "email@example.com"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "resendRegistrantEmailVerification"
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string",
+            "example": "example.com",
+            "minLength": 1,
+            "maxLength": 253
+          },
+          "name": "domainName",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "get": {
+        "summary": "Get registrant email verification status",
+        "x-stoplight": {
+          "id": "02v1bb8baydh2"
+        },
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "x-stoplight": {
+                        "id": "4uwet4d3rjocl"
+                      },
+                      "format": "int32",
+                      "example": 123456
+                    },
+                    "email": {
+                      "type": "string",
+                      "x-stoplight": {
+                        "id": "rd10u7t09vc5e"
+                      },
+                      "example": "email@example.com"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Client Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getRegistrantEmailVerificationStatus"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateDomainModel": {
+        "title": "CreateDomain",
+        "x-stoplight": {
+          "id": "5c6hfb785ycm2"
+        },
+        "type": "object",
+        "examples": [
+          {
+            "registrant": "c987654321",
+            "price": {
+              "amt": 12.34,
+              "ccy": 840,
+              "op": "CREATE",
+              "period": {
+                "unit": "YEARS",
+                "value": 1
+              }
+            }
+          }
+        ],
+        "required": [
+          "price",
+          "registrant"
+        ],
+        "properties": {
+          "price": {
+            "$ref": "#/components/schemas/PriceModel",
+            "x-stoplight": {
+              "id": "7m8c3eb85zbq9"
+            }
+          },
+          "registrant": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "sn8dzb9s0a18a"
+            },
+            "example": "c987654321"
+          },
+          "admin": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "gqqfm3pkcg8pn"
+            },
+            "example": "c987654321"
+          },
+          "tech": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "is9bo8pobpywk"
+            },
+            "example": "c987654321"
+          },
+          "billing": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "1kwu14xbvlq8o"
+            },
+            "example": "c987654321"
+          },
+          "ns": {
+            "type": "array",
+            "x-stoplight": {
+              "id": "jdrkr7dlqvf2i"
+            },
+            "items": {
+              "x-stoplight": {
+                "id": "llwp2bidld8m1"
+              },
+              "type": "string"
+            }
+          }
+        }
+      },
+      "RenewDomainModel": {
+        "title": "RenewDomain",
+        "x-stoplight": {
+          "id": "fyptkzpjmc151"
+        },
+        "type": "object",
+        "examples": [
+          {
+            "currentETS": 1577836800,
+            "price": {
+              "amt": 12.34,
+              "ccy": 840,
+              "op": "RENEW",
+              "period": {
+                "unit": "YEARS",
+                "value": 1
+              }
+            }
+          }
+        ],
+        "required": [
+          "price",
+          "currentETS"
+        ],
+        "properties": {
+          "price": {
+            "$ref": "#/components/schemas/PriceModel",
+            "x-stoplight": {
+              "id": "ikx9nw61j8cl5"
+            }
+          },
+          "currentETS": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "7jl4wxjzf62g1"
+            },
+            "format": "int64",
+            "example": 1577836800
+          }
+        },
+        "description": ""
+      },
+      "RestoreDomainModel": {
+        "title": "RestoreDomain",
+        "x-stoplight": {
+          "id": "tnvghw3r5ql10"
+        },
+        "type": "object",
+        "examples": [
+          {
+            "currentETS": 1577836800,
+            "price": {
+              "amt": 12.34,
+              "ccy": 840,
+              "op": "RENEW",
+              "period": {
+                "unit": "YEARS",
+                "value": 1
+              }
+            }
+          }
+        ],
+        "required": [
+          "price"
+        ],
+        "properties": {
+          "price": {
+            "$ref": "#/components/schemas/PriceModel"
+          }
+        },
+        "description": ""
+      },
+      "TransferDomainModel": {
+        "title": "TransferDomain",
+        "x-stoplight": {
+          "id": "gcxrsd8qxhr2c"
+        },
+        "type": "object",
+        "examples": [
+          {
+            "authCode": "xGi%8KFk3wQV",
+            "registrant": "c987654321",
+            "price": {
+              "amt": 12.34,
+              "ccy": 840,
+              "op": "TRANSFER",
+              "period": {
+                "unit": "YEARS",
+                "value": 1
+              }
+            }
+          }
+        ],
+        "required": [
+          "price",
+          "registrant",
+          "authCode"
+        ],
+        "properties": {
+          "price": {
+            "$ref": "#/components/schemas/PriceModel",
+            "x-stoplight": {
+              "id": "ias0fnjy8s9l8"
+            }
+          },
+          "registrant": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "nk25882omymtx"
+            },
+            "example": "c987654321"
+          },
+          "authCode": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "vn7kkbzewtpm9"
+            },
+            "example": "xGi%8KFk3wQV"
+          }
+        }
+      },
+      "PeriodModel": {
+        "title": "Period",
+        "x-stoplight": {
+          "id": "1kz66gcgvcsoj"
+        },
+        "type": "object",
+        "required": [
+          "unit",
+          "value"
+        ],
+        "properties": {
+          "unit": {
+            "$ref": "#/components/schemas/PeriodUnitModel",
+            "x-stoplight": {
+              "id": "xz7x2yaq8pk4v"
+            }
+          },
+          "value": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "v6m5zgl30quvi"
+            },
+            "format": "int32",
+            "minimum": 1,
+            "maximum": 10
+          }
+        }
+      },
+      "PeriodUnitModel": {
+        "title": "PeriodUnit",
+        "x-stoplight": {
+          "id": "d5wde2wa8qo55"
+        },
+        "enum": [
+          "YEARS",
+          "MONTHS"
+        ]
+      },
+      "OrderModel": {
+        "title": "Order",
+        "x-stoplight": {
+          "id": "g41bqz77janmn"
+        },
+        "type": "object",
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "common": "#/components/schemas/OrderModel",
+            "domain": "#/components/schemas/OrderDomainModel"
+          }
+        },
+        "required": [
+          "oid",
+          "type",
+          "status",
+          "cts",
+          "uts"
+        ],
+        "properties": {
+          "oid": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "8tdolujyqp77n"
+            },
+            "description": "order Id",
+            "example": "o54321"
+          },
+          "type": {
+            "x-stoplight": {
+              "id": "rqs1uwfkinemd"
+            },
+            "example": "common",
+            "default": "common",
+            "enum": [
+              "common",
+              "domain"
+            ]
+          },
+          "status": {
+            "type": "array",
+            "x-stoplight": {
+              "id": "b05bnuhwy3zhv"
+            },
+            "items": {
+              "x-stoplight": {
+                "id": "2yn9gp3cj3thv"
+              },
+              "type": "string",
+              "example": "orderActive"
+            }
+          },
+          "cts": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "mkf4avahqv2hn"
+            },
+            "format": "int64",
+            "minimum": 0,
+            "example": 1577836800
+          },
+          "uts": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "4jkd753f3il9e"
+            },
+            "format": "int64",
+            "minimum": 0,
+            "example": 1577836800
+          },
+          "ets": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "gvakifh9rbufl"
+            },
+            "format": "int64",
+            "minimum": 0,
+            "example": 1577836800
+          }
+        }
+      },
+      "OrderDomainModel": {
+        "title": "DomainOrder",
+        "x-stoplight": {
+          "id": "w22gvh0irsout"
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/OrderModel",
+            "x-stoplight": {
+              "id": "u9l3z7rj5ju31"
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "domain": {
+                "type": "object",
+                "x-stoplight": {
+                  "id": "6h0590kp4iuvp"
+                },
+                "required": [
+                  "name",
+                  "registrant"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "rw50gehcc0r42"
+                    },
+                    "example": "example.com"
+                  },
+                  "registrant": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "elzqbffwbh01z"
+                    },
+                    "example": "c987654321"
+                  },
+                  "admin": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "vkqzcqxymez5j"
+                    },
+                    "example": "c987654321"
+                  },
+                  "tech": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "0cjh5k02j16d2"
+                    },
+                    "example": "c987654321"
+                  },
+                  "billing": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "t6tawaeaebt9n"
+                    },
+                    "example": "c987654321"
+                  },
+                  "ns": {
+                    "type": "array",
+                    "x-stoplight": {
+                      "id": "4tuiss2g7zhhu"
+                    },
+                    "items": {
+                      "x-stoplight": {
+                        "id": "58q7py28cbnup"
+                      },
+                      "type": "string",
+                      "example": "ns1.example.com"
+                    }
+                  },
+                  "w3a": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "8mb9p1wo1k9z9"
+                    },
+                    "example": "eip155:1:0xcf9d756965e97dc144E90e447C5184B26861a8C0"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "ErrorModel": {
+        "title": "Error",
+        "x-stoplight": {
+          "id": "m647miyoqvlou"
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "btthhq1vgk6pd"
+            },
+            "format": "int32",
+            "example": 12345
+          },
+          "message": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "3oy9cqb2hjx9e"
+            },
+            "example": "Invalid domain name."
+          },
+          "traceId": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "5cik9ohkri9l2"
+            },
+            "example": "c4f9d5b3-8fb9-42df-aa05-5281d8655a71"
+          }
+        }
+      },
+      "ContactModel": {
+        "type": "object",
+        "x-examples": {
+          "Example 1": {
+            "contactId": "c987654321",
+            "firstName": "John",
+            "lastName": "Doe",
+            "org": "Acme Corporation",
+            "orgPhone": "+15551234567",
+            "cc": "us",
+            "pc": "62704",
+            "sp": "IL",
+            "city": "Springfield",
+            "addr": "123 Main Street",
+            "email": "john.doe@example.com",
+            "phone": "+15551234567",
+            "phonePolicy": true
+          }
+        },
+        "x-stoplight": {
+          "id": "da4pp20lj0nxd"
+        },
+        "title": "Contact",
+        "required": [
+          "contactId",
+          "firstName",
+          "lastName",
+          "cc",
+          "pc",
+          "sp",
+          "city",
+          "addr",
+          "email",
+          "phone",
+          "phonePolicy"
+        ],
+        "properties": {
+          "contactId": {
+            "type": "string",
+            "example": "c987654321"
+          },
+          "firstName": {
+            "type": "string",
+            "example": "John"
+          },
+          "middleName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "iv0yby9tkif14"
+            }
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Doe"
+          },
+          "org": {
+            "type": "string",
+            "example": "Acme Corporation"
+          },
+          "orgPhone": {
+            "type": "string",
+            "example": "+15551234567"
+          },
+          "cc": {
+            "type": "string",
+            "example": "us"
+          },
+          "pc": {
+            "type": "string",
+            "example": "62704"
+          },
+          "sp": {
+            "type": "string",
+            "example": "IL"
+          },
+          "city": {
+            "type": "string",
+            "example": "Springfield"
+          },
+          "addr": {
+            "type": "string",
+            "example": "123 Main Street"
+          },
+          "email": {
+            "type": "string",
+            "example": "john.doe@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+15551234567"
+          },
+          "phonePolicy": {
+            "type": "boolean"
+          },
+          "fax": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "dihgf5an94apk"
+            }
+          }
+        }
+      },
+      "PriceModel": {
+        "title": "Price",
+        "x-stoplight": {
+          "id": "f83xfc2g3507a"
+        },
+        "type": "object",
+        "required": [
+          "amt",
+          "ccy",
+          "op",
+          "period"
+        ],
+        "properties": {
+          "amt": {
+            "type": "number",
+            "x-stoplight": {
+              "id": "t2qiznjdr0lzj"
+            },
+            "format": "double",
+            "example": 12.34
+          },
+          "ccy": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "v1ct8tl9ycite"
+            },
+            "format": "int32",
+            "example": 840,
+            "description": "ISO 4217 currency numeric code"
+          },
+          "op": {
+            "$ref": "#/components/schemas/OperationModel",
+            "x-stoplight": {
+              "id": "ghhvf63rwuy0z"
+            }
+          },
+          "period": {
+            "$ref": "#/components/schemas/PeriodModel",
+            "x-stoplight": {
+              "id": "o8nars2apl797"
+            }
+          }
+        }
+      },
+      "OperationModel": {
+        "title": "Operation",
+        "x-stoplight": {
+          "id": "wy79097xrdanv"
+        },
+        "enum": [
+          "NONE",
+          "CREATE",
+          "TRANSFER",
+          "RENEW",
+          "RESTORE",
+          "UPDATE"
+        ]
+      },
+      "WebhookEvent": {
+        "title": "WebhookEvent",
+        "x-stoplight": {
+          "id": "srmnkm84igco4"
+        },
+        "discriminator": {
+          "propertyName": "eventType",
+          "mapping": {
+            "job_result": "#/components/schemas/WebhookJobResultEvent",
+            "domain_status": "#/components/schemas/WebhookDomainStatusEvent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "eventId",
+          "eventType"
+        ],
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "n75c9kpc5007x"
+            },
+            "example": "1f52cf35-b467-4653-ae86-ce1063a7eef6"
+          },
+          "eventType": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "esjgbhaeu98vc"
+            },
+            "example": "event_type"
+          },
+          "message": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "0q3nmi4lxd2zf"
+            },
+            "example": "Event message"
+          }
+        }
+      },
+      "WebhookJobResultEvent": {
+        "title": "WebhookJobResultEvent",
+        "x-stoplight": {
+          "id": "dwt5kl1avkx4z"
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WebhookEvent",
+            "x-stoplight": {
+              "id": "bav7il3ti58dn"
+            }
+          },
+          {
+            "type": "object",
+            "x-stoplight": {
+              "id": "2qu7t7pbcw1v5"
+            },
+            "required": [
+              "eventData"
+            ],
+            "properties": {
+              "eventData": {
+                "type": "object",
+                "x-stoplight": {
+                  "id": "5nou512aeg4cd"
+                },
+                "required": [
+                  "jobId",
+                  "code"
+                ],
+                "properties": {
+                  "jobId": {
+                    "type": "string",
+                    "x-stoplight": {
+                      "id": "j4opypy3j7u5y"
+                    },
+                    "example": "f8015046a6865383dac6"
+                  },
+                  "code": {
+                    "type": "integer",
+                    "x-stoplight": {
+                      "id": "l6umsjiw8zejf"
+                    },
+                    "format": "int32",
+                    "example": 440000
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "examples": [
+          {
+            "eventId": "1f52cf35-b467-4653-ae86-ce1063a7eef6",
+            "eventType": "job_result",
+            "message": "Domain created successfully",
+            "eventData": {
+              "jobId": "f8015046a6865383dac6",
+              "code": 440000
+            }
+          }
+        ]
+      },
+      "WebhookDomainStatusEvent": {
+        "title": "WebhookDomainUpdateEvent",
+        "x-stoplight": {
+          "id": "t2dea10wn8c11"
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/WebhookEvent",
+            "x-stoplight": {
+              "id": "ausp4yb8qchbv"
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "eventData"
+            ],
+            "properties": {
+              "eventData": {
+                "$ref": "#/components/schemas/OrderDomainModel",
+                "x-stoplight": {
+                  "id": "nsir8fx3h0syv"
+                }
+              }
+            }
+          }
+        ],
+        "examples": [
+          {
+            "eventId": "1f52cf35-b467-4653-ae86-ce1063a7eef6",
+            "eventType": "domain_status",
+            "message": "Domain expired",
+            "eventData": {
+              "domainName": "example.com",
+              "oid": "o54321",
+              "type": "domain",
+              "status": 94,
+              "cts": 1577836800,
+              "uts": 1577836800,
+              "ets": 1577836800
+            }
+          }
+        ]
+      },
+      "ListParams": {
+        "title": "ListParams",
+        "x-stoplight": {
+          "id": "51qke5u6far1z"
+        },
+        "type": "object",
+        "properties": {
+          "pgn": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "1qji7ymxgoam9"
+            },
+            "format": "int32",
+            "description": "Page number 1..N",
+            "default": 1,
+            "example": 5
+          },
+          "pgl": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "wdbul03cw3ebv"
+            },
+            "format": "int32",
+            "description": "Page length 1..K",
+            "default": 25,
+            "example": 50,
+            "maximum": 100,
+            "minimum": 1
+          },
+          "filter": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "607qm8i9zftpb"
+            },
+            "example": "email = 'email@example.com'"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "API-Key": {
+        "name": "x-api-key",
+        "type": "apiKey",
+        "in": "header",
+        "description": ""
+      }
+    }
+  },
+  "security": [
+    {
+      "API-Key": []
+    }
+  ]
+}
